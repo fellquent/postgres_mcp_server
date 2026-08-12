@@ -88,7 +88,6 @@ class CatalogRepository:
             (schema, table),
         )
 
-
     async def get_primary_key(self, schema: str, table: str) -> list[str]:
         rows = await self.execute_query(
             """
