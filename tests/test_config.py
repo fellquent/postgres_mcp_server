@@ -51,6 +51,7 @@ def test_env_vars_override(monkeypatch):
     monkeypatch.setenv("DB_HOST", "env_host")
     monkeypatch.setenv("DB_PORT", "5678")
     monkeypatch.setenv("DB_NAME", "env_db")
+    monkeypatch.setenv("DB_STATEMENT_TIMEOUT_MS", "10000")
 
     db = DbSettings()
     assert db.user == "env_user"
@@ -58,6 +59,7 @@ def test_env_vars_override(monkeypatch):
     assert db.host == "env_host"
     assert db.port == 5678
     assert db.name == "env_db"
+    assert db.statement_timeout_ms == 10000
 
 
 # ========= Test Cases for Settings ==========
@@ -65,23 +67,19 @@ def test_env_vars_override(monkeypatch):
 
 def test_settings_defaults(monkeypatch):
     monkeypatch.delenv("MCP_MAX_ROWS", raising=False)
-    monkeypatch.delenv("MCP_STATEMENT_TIMEOUT_MS", raising=False)
     monkeypatch.delenv("MCP_ALLOWED_SCHEMAS", raising=False)
 
     settings = Settings(_env_file=None)
     assert settings.max_rows == 100
-    assert settings.statement_timeout_ms == 5000
     assert settings.allowed_schemas == ["public"]
 
 
 def test_settings_env_vars_type(monkeypatch):
     monkeypatch.setenv("MCP_MAX_ROWS", "7")
-    monkeypatch.setenv("MCP_STATEMENT_TIMEOUT_MS", "123")
     monkeypatch.setenv("MCP_ALLOWED_SCHEMAS", '["public", "my_schema"]')
 
     settings = Settings(_env_file=None)
     assert settings.max_rows == 7
-    assert settings.statement_timeout_ms == 123
     assert settings.allowed_schemas == ["public", "my_schema"]
     assert isinstance(settings.allowed_schemas, list)
 

@@ -20,6 +20,7 @@ class DbSettings(BaseSettings):
     host: str = Field(default="localhost")
     port: int = Field(default=5432)
     name: str = Field(default="playground")
+    statement_timeout_ms: int = Field(default=5000)
 
     @property
     def url(self) -> str:
@@ -38,5 +39,4 @@ class Settings(BaseSettings):
     )
 
     max_rows: int = Field(default=100)
-    statement_timeout_ms: int = Field(default=5000)
     allowed_schemas: list[str] = Field(default_factory=lambda: ["public"])
