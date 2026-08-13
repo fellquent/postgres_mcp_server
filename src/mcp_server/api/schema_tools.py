@@ -44,4 +44,3 @@ def register(mcp, service):
             Schema names, ordered by name, e.g. ["public"]
         """
         return await service.list_schemas()
-

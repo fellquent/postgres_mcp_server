@@ -17,4 +17,6 @@ class IntrospectionService:
 
     async def list_schemas(self) -> list[str]:
         all_schemas = await self.catalog_repository.list_schemas()
-        return [schema for schema in all_schemas if schema in self.settings.allowed_schemas]
+        return [
+            schema for schema in all_schemas if schema in self.settings.allowed_schemas
+        ]
