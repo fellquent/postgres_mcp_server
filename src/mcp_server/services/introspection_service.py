@@ -1,5 +1,5 @@
-from mcp_server.repositories.catalog_repository import CatalogRepository
 from mcp_server.config import Settings
+from mcp_server.repositories.catalog_repository import CatalogRepository
 
 
 class IntrospectionService:
@@ -14,3 +14,7 @@ class IntrospectionService:
             raise ValueError(
                 f"Schema '{schema}' is not allowed. Allowed: {self.settings.allowed_schemas}"
             )
+
+    async def list_schemas(self) -> list[str]:
+        all_schemas = await self.catalog_repository.list_schemas()
+        return [schema for schema in all_schemas if schema in self.settings.allowed_schemas]
