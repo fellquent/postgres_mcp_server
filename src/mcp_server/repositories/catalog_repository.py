@@ -17,7 +17,6 @@ class CatalogRepository:
             await cursor.execute(query, params)
             return await cursor.fetchall()
 
-    # TODO: filter against settings.allowed_schemas in the service layer
     async def list_schemas(self) -> list[str]:
         rows = await self.execute_query(
             """
@@ -52,18 +51,6 @@ class CatalogRepository:
             """,
             (schema,),
         )
-
-    async def list_columns(self, schema: str, table: str) -> list[str]:
-        rows = await self.execute_query(
-            """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_schema = %s AND table_name = %s
-            ORDER BY ordinal_position
-            """,
-            (schema, table),
-        )
-        return [row["column_name"] for row in rows]
 
     async def describe_table(self, schema: str, table: str) -> list[dict[str, Any]]:
         return await self.execute_query(

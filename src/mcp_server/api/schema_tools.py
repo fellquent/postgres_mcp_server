@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastmcp.exceptions import ToolError
 
 
@@ -44,3 +46,53 @@ def register(mcp, service):
             Schema names, ordered by name, e.g. ["public"]
         """
         return await service.list_schemas()
+
+    @mcp.tool
+    async def describe_table(schema: str, table: str) -> dict[str, Any]:
+        """Describe one table: its columns, primary key, and foreign keys.
+
+        Call this before writing a query against a table you have not seen.
+        A single call returns everything needed to write correct SQL, so there
+        is no need to ask for columns and keys separately.
+
+        Args:
+            schema: Schema containing the table.
+            table: Table name, case-sensitive and unquoted -- pass Orders,
+                not "Orders".
+
+        Returns:
+            {
+              "schema": "public",
+              "table": "books",
+              "columns": [
+                {"column_name": "id",
+                 "data_type": "integer",
+                 "is_nullable": false,
+                 "column_default": "nextval('books_id_seq'::regclass)",
+                 "comment": null}
+              ],
+              "primary_key": ["id"],
+              "foreign_keys": [
+                {"constraint_name": "books_author_id_fkey",
+                 "columns": ["author_id"],
+                 "foreign_schema": "public",
+                 "foreign_table": "authors",
+                 "foreign_columns": ["id"]}
+              ]
+            }
+
+        Notes:
+            data_type carries length and precision -- "character varying(50)",
+            "numeric(10,2)" -- so respect those limits when writing values.
+            is_nullable is a boolean. comment is the column's COMMENT text,
+            or null.
+            primary_key is in key order, and is empty for views and for tables
+            that have none.
+            foreign_keys has one entry per constraint. columns and
+            foreign_columns are parallel: position 0 references position 0.
+            Views and materialized views return columns but no keys.
+        """
+        try:
+            return await service.describe_table(schema, table)
+        except ValueError as e:
+            raise ToolError(str(e)) from e
