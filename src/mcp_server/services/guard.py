@@ -15,7 +15,7 @@ FORBIDDEN_NODE_TYPES = {
 FORBIDDEN_TYPES = tuple(FORBIDDEN_NODE_TYPES)
 
 
-def validate_select(sql_query: str, max_rows: int) -> str:
+def validate_query(sql_query: str, max_rows: int) -> str:
 
     try:
         statements = parse(sql=sql_query, dialect="postgres")
