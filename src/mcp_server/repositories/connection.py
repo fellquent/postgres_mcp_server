@@ -11,7 +11,9 @@ from mcp_server.config import DbSettings
 async def get_cursor(db_settings: DbSettings):
     connection = await psycopg.AsyncConnection.connect(
         db_settings.url,
+        # {'id': 1, 'name': 'Alice', 'email': 'alice@example.com'}
         row_factory=dict_row,
+        # set at connect time so every query inherits it
         options=(
             "-c default_transaction_read_only=on "
             f"-c statement_timeout={db_settings.statement_timeout_ms}"
@@ -21,6 +23,7 @@ async def get_cursor(db_settings: DbSettings):
         async with connection.cursor() as cursor:
             yield cursor
     finally:
+        # always roll back; this server never commits
         # rollback can itself fail if the connection died; still close it
         try:
             await connection.rollback()

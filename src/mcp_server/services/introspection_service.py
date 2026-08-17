@@ -21,6 +21,7 @@ class IntrospectionService:
         return await self.catalog_repository.list_tables(schema)
 
     async def list_schemas(self) -> list[str]:
+        # filter rather than raise
         all_schemas = await self.catalog_repository.list_schemas()
         return [
             schema for schema in all_schemas if schema in self.settings.allowed_schemas
@@ -33,6 +34,7 @@ class IntrospectionService:
             self.catalog_repository.get_primary_key(schema, table),
             self.catalog_repository.get_foreign_keys(schema, table),
         )
+        # empty columns means no such table
         if not columns:
             raise ValueError(
                 f"Table {table} not found in schema {schema}. Use list_tables to see what exists."

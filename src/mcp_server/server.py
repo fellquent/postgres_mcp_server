@@ -8,6 +8,7 @@ from mcp_server.repositories.query_repository import QueryRepository
 from mcp_server.services.introspection_service import IntrospectionService
 from mcp_server.services.query_service import QueryService
 
+# composition root
 mcp = FastMCP("MCP Server")
 
 db_settings = DbSettings()

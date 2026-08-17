@@ -5,7 +5,12 @@ from mcp_server.repositories.connection import get_cursor
 
 
 class CatalogRepository:
-    """Reads schema metadata out of the database"""
+    """Reads schema metadata out of the database
+
+    Uses pg_catalog rather than information_schema wherever constraints are
+    involved: those views are filtered by ownership and by privileges other
+    than SELECT, so they return nothing at all for a read-only role.
+    """
 
     def __init__(self, db_settings: DbSettings):
         self._db_settings = db_settings
@@ -31,6 +36,9 @@ class CatalogRepository:
         return [row["schema_name"] for row in rows]
 
     async def list_tables(self, schema: str) -> list[dict[str, str]]:
+        # pg_class, not information_schema.tables: that view omits materialized
+        # views entirely. has_table_privilege replaces the privilege filtering
+        # information_schema was doing for us implicitly.
         return await self._execute_query(
             """
             SELECT
@@ -53,6 +61,10 @@ class CatalogRepository:
         )
 
     async def describe_table(self, schema: str, table: str) -> list[dict[str, Any]]:
+        # format_type keeps length and precision - character varying(50),
+        # numeric(10,2) - which information_schema.data_type throws away.
+        # attnum > 0 skips system columns; attisdropped skips the tombstones
+        # dropped columns leave behind.
         return await self._execute_query(
             """
             SELECT
@@ -76,6 +88,11 @@ class CatalogRepository:
         )
 
     async def get_primary_key(self, schema: str, table: str) -> list[str]:
+        # conkey holds column positions; unnesting WITH ORDINALITY preserves
+        # key order, which matters for composite keys.
+        # relname is compared as an exact string, so "Orders" and "orders" stay
+        # distinct - a ::regclass cast would fold the case and answer about
+        # the wrong table.
         rows = await self._execute_query(
             """
             SELECT att.attname AS column_name
@@ -96,6 +113,10 @@ class CatalogRepository:
         return [row["column_name"] for row in rows]
 
     async def get_foreign_keys(self, schema: str, table: str) -> list[dict[str, Any]]:
+        # conkey and confkey are parallel arrays of column positions; unnesting
+        # both together pairs each local column with the right foreign one.
+        # Joining them separately produces a cartesian product - a two-column
+        # key would come back as four rows with three of the pairs invented.
         rows = await self._execute_query(
             """
             SELECT
@@ -126,6 +147,8 @@ class CatalogRepository:
 
     @staticmethod
     def _group_foreign_keys(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        # the query returns one row per column; callers want one entry per
+        # constraint, with columns and foreign_columns parallel
         grouped: dict[str, dict[str, Any]] = {}
         for row in rows:
             key = row["constraint_name"]
