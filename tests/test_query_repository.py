@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from uuid import UUID
 
@@ -13,9 +13,15 @@ class TestCoerceValue:
     def test_decimal_becomes_str(self):
         assert _coerce_value(Decimal("19.99")) == "19.99"
 
-    def test_datetime_becomes_isoformat(self):
-        value = datetime(2026, 1, 15, 10, 30, 0)
+    def test_naive_datetime_becomes_isoformat(self):
+        # postgres timestamp (no tz) comes back naive
+        value = datetime(2026, 1, 15, 10, 30, 0) # noqa: DTZ001
         assert _coerce_value(value) == "2026-01-15T10:30:00"
+
+    def test_aware_datetime_keeps_offset(self):
+        # postgres timestamptz comes back aware
+        value = datetime(2026, 1, 15, 10, 30, tzinfo=UTC)
+        assert _coerce_value(value) == "2026-01-15T10:30:00+00:00"
 
     def test_date_becomes_isoformat(self):
         value = date(2026, 1, 15)
@@ -53,12 +59,12 @@ class TestCoerceRow:
         row = {
             "id": 1,
             "price": Decimal("19.99"),
-            "created_at": datetime(2026, 1, 15, 10, 30, 0),
+            "created_at": datetime(2026, 1, 15, 10, 30, 0), # noqa: DTZ001
             "name": "widget",
         }
         result = _coerce_row(row)
         assert result == {
-            "id": 1,
+            "id": 1,    
             "price": "19.99",
             "created_at": "2026-01-15T10:30:00",
             "name": "widget",
