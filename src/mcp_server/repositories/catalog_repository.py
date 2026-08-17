@@ -8,17 +8,17 @@ class CatalogRepository:
     """Reads schema metadata out of the database"""
 
     def __init__(self, db_settings: DbSettings):
-        self.db_settings = db_settings
+        self._db_settings = db_settings
 
-    async def execute_query(
+    async def _execute_query(
         self, query: str, params: tuple | None = None
     ) -> list[dict[str, Any]]:
-        async with get_cursor(self.db_settings) as cursor:
+        async with get_cursor(self._db_settings) as cursor:
             await cursor.execute(query, params)
             return await cursor.fetchall()
 
     async def list_schemas(self) -> list[str]:
-        rows = await self.execute_query(
+        rows = await self._execute_query(
             """
             SELECT nspname AS schema_name
             FROM pg_namespace
@@ -31,7 +31,7 @@ class CatalogRepository:
         return [row["schema_name"] for row in rows]
 
     async def list_tables(self, schema: str) -> list[dict[str, str]]:
-        return await self.execute_query(
+        return await self._execute_query(
             """
             SELECT
                 cl.relname AS table_name,
@@ -53,7 +53,7 @@ class CatalogRepository:
         )
 
     async def describe_table(self, schema: str, table: str) -> list[dict[str, Any]]:
-        return await self.execute_query(
+        return await self._execute_query(
             """
             SELECT
                 att.attname                               AS column_name,
@@ -76,7 +76,7 @@ class CatalogRepository:
         )
 
     async def get_primary_key(self, schema: str, table: str) -> list[str]:
-        rows = await self.execute_query(
+        rows = await self._execute_query(
             """
             SELECT att.attname AS column_name
             FROM pg_constraint con
@@ -96,7 +96,7 @@ class CatalogRepository:
         return [row["column_name"] for row in rows]
 
     async def get_foreign_keys(self, schema: str, table: str) -> list[dict[str, Any]]:
-        rows = await self.execute_query(
+        rows = await self._execute_query(
             """
             SELECT
                 con.conname   AS constraint_name,
