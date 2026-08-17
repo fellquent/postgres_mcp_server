@@ -3,6 +3,8 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
+import psycopg
+
 from mcp_server.config import DbSettings
 from mcp_server.repositories.connection import get_cursor
 
@@ -39,6 +41,9 @@ class QueryRepository:
 
     async def run_query(self, sql: str) -> list[dict[str, Any]]:
         async with get_cursor(self._db_settings) as cursor:
-            await cursor.execute(sql)
+            try:
+                await cursor.execute(sql)
+            except psycopg.Error as e:
+                raise ValueError(e) from e
             rows = await cursor.fetchall()
             return _coerce_rows(rows)
