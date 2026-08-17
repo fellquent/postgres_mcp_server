@@ -43,3 +43,4 @@ class Settings(BaseSettings):
 
     max_rows: int = Field(default=100)
     allowed_schemas: list[str] = Field(default_factory=lambda: ["public"])
+    log_level: str = "INFO"

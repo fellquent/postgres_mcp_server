@@ -1,8 +1,11 @@
 import asyncio
+import logging
 from typing import Any
 
 from mcp_server.config import Settings
 from mcp_server.repositories.catalog_repository import CatalogRepository
+
+logger = logging.getLogger(__name__)
 
 
 class IntrospectionService:
@@ -12,6 +15,9 @@ class IntrospectionService:
 
     def _require_allowed_schema(self, schema) -> None:
         if schema not in self.settings.allowed_schemas:
+            logger.warning(
+                "schema denied: %s | allowed=%s", schema, self.settings.allowed_schemas
+            )
             raise ValueError(
                 f"Schema '{schema}' is not allowed. Allowed: {self.settings.allowed_schemas}"
             )
@@ -36,6 +42,7 @@ class IntrospectionService:
         )
         # empty columns means no such table
         if not columns:
+            logger.info("table not found: %s.%s", schema, table)
             raise ValueError(
                 f"Table {table} not found in schema {schema}. Use list_tables to see what exists."
             )

@@ -1,7 +1,11 @@
+import logging
+import time
 from typing import Any
 
 from mcp_server.config import DbSettings
 from mcp_server.repositories.connection import get_cursor
+
+logger = logging.getLogger(__name__)
 
 
 class CatalogRepository:
@@ -18,9 +22,19 @@ class CatalogRepository:
     async def _execute_query(
         self, query: str, params: tuple | None = None
     ) -> list[dict[str, Any]]:
+        # one place covers every catalog query; DEBUG because these are spam
+        # unless something is slow
+        started = time.perf_counter()
         async with get_cursor(self._db_settings) as cursor:
             await cursor.execute(query, params)
-            return await cursor.fetchall()
+            rows = await cursor.fetchall()
+            logger.debug(
+                "catalog query: %d rows in %.1f ms | params=%s",
+                len(rows),
+                (time.perf_counter() - started) * 1000,
+                params,
+            )
+            return rows
 
     async def list_schemas(self) -> list[str]:
         rows = await self._execute_query(

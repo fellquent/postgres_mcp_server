@@ -1,8 +1,11 @@
+import logging
 from typing import Any
 
 from mcp_server.config import Settings
 from mcp_server.repositories.query_repository import QueryRepository
 from mcp_server.services.guard import validate_query
+
+logger = logging.getLogger(__name__)
 
 
 class QueryService:
@@ -12,7 +15,11 @@ class QueryService:
 
     async def run_query(self, sql: str) -> dict[str, Any]:
         # guard first; rejected sql never opens a connection
-        validated = validate_query(sql, self._settings.max_rows)   # raises ValueError
+        try:
+            validated = validate_query(sql, self._settings.max_rows)   # raises ValueError
+        except ValueError as e:
+            logger.warning("query rejected: %s | sql=%s", e, sql)
+            raise
         rows = await self._query_repo.run_query(validated)
 
         # if number of rows == max_rows then flag it as truncated,
@@ -20,6 +27,7 @@ class QueryService:
         # because we set LIMIT to a query in the validate_query() 
         if len(rows) == self._settings.max_rows:
             truncated = True
+            logger.debug("result hit max_rows=%d, flagged truncated", self._settings.max_rows)
         else:
             truncated = False
 

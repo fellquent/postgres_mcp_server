@@ -2,7 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from mcp_server.server import mcp
+from mcp_server.logging_config import configure_logging
+from mcp_server.server import mcp, settings
+
+configure_logging(settings.log_level)
 
 # path="/" avoids doubling: the mcp app's own default path is /mcp, so mounting
 # it at /mcp would expose it at /mcp/mcp/. stateless_http keeps sessions out of
