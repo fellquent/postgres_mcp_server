@@ -1,7 +1,7 @@
+import logging
+
 from fastmcp import FastMCP
 from fastmcp.server.middleware.logging import LoggingMiddleware
-
-import logging
 
 from mcp_server.api.query_tools import register as query_register
 from mcp_server.api.schema_tools import register as schema_register

@@ -16,23 +16,22 @@ class QueryService:
     async def run_query(self, sql: str) -> dict[str, Any]:
         # guard first; rejected sql never opens a connection
         try:
-            validated = validate_query(sql, self._settings.max_rows)   # raises ValueError
+            display_sql = validate_query(sql, self._settings.max_rows)   # raises ValueError
+            run_sql = validate_query(sql, self._settings.max_rows + 1)   # raises ValueError
+
         except ValueError as e:
             logger.warning("query rejected: %s | sql=%s", e, sql)
             raise
-        rows = await self._query_repo.run_query(validated)
-
-        # if number of rows == max_rows then flag it as truncated,
-        # because we can't tell if it is truncated for real,
-        # because we set LIMIT to a query in the validate_query() 
-        if len(rows) == self._settings.max_rows:
+        rows = await self._query_repo.run_query(run_sql)
+        if len(rows) > self._settings.max_rows:
             truncated = True
+            rows = rows[:self._settings.max_rows]
             logger.debug("result hit max_rows=%d, flagged truncated", self._settings.max_rows)
         else:
             truncated = False
 
         return {
-            "sql" : validated,
+            "sql" : display_sql,
             "rows" : rows,
             "row_count" : len(rows),
             "truncated" : truncated,
