@@ -1,11 +1,12 @@
 from typing import Any
 
 from fastmcp.exceptions import ToolError
+from fastmcp.server.auth import require_scopes
 
 
 def register(mcp, service):
 
-    @mcp.tool
+    @mcp.tool(auth = require_scopes("mcp-access"))
     async def run_query(query: str) -> dict[str, Any]:
         """Run one read-only SELECT and return its rows.
 

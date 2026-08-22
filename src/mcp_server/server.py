@@ -1,6 +1,7 @@
 import logging
 
 from fastmcp import FastMCP
+from fastmcp.server.auth.providers.azure import AzureProvider
 from fastmcp.server.middleware.logging import LoggingMiddleware
 
 from mcp_server.api.query_tools import register as query_register
@@ -12,8 +13,19 @@ from mcp_server.repositories.query_repository import QueryRepository
 from mcp_server.services.introspection_service import IntrospectionService
 from mcp_server.services.query_service import QueryService
 
+settings = Settings()
+db_settings = DbSettings()
+
+auth_provider = AzureProvider(
+    client_id=str(settings.azure_client_id),
+    client_secret=settings.azure_client_secret.get_secret_value(),
+    tenant_id=str(settings.azure_tenant_id),
+    base_url=settings.base_url,
+    required_scopes=[settings.azure_scope],
+)
+
 # composition root
-mcp = FastMCP("MCP Server")
+mcp = FastMCP("MCP Server", auth=auth_provider)
 
 mcp.add_middleware(
     LoggingMiddleware(
@@ -23,10 +35,6 @@ mcp.add_middleware(
         max_payload_length=500
     )
 )
-
-
-db_settings = DbSettings()
-settings = Settings()
 
 catalog_repository = CatalogRepository(db_settings)
 query_repository = QueryRepository(db_settings)

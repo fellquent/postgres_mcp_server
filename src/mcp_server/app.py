@@ -21,13 +21,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan, title="Postgres MCP Server")
-# served at /mcp/ with the trailing slash; /mcp 307-redirects and not every
-# client follows redirects on POST.
-# note: route dependencies do not cover a mounted app -- auth has to be
-# middleware, or it will not apply here.
-app.mount("/mcp", mcp_app)
 
 
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+app.mount("/", mcp_app)

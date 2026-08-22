@@ -1,3 +1,4 @@
+import uuid
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -44,3 +45,10 @@ class Settings(BaseSettings):
     max_rows: int = Field(default=100)
     allowed_schemas: list[str] = Field(default_factory=lambda: ["public"])
     log_level: str = "INFO"
+
+    # auth
+    azure_client_id: uuid.UUID
+    azure_client_secret: SecretStr
+    azure_tenant_id: uuid.UUID
+    azure_scope: str = "mcp-access"
+    base_url: str = "http://localhost:8000"
